@@ -82,6 +82,7 @@ void main(){
                         process_dm(clients, curr_node->pkt);
                     case MSG_TEXT:
                         process_text(clients, curr_node->pkt);
+                    default:
                 }
             }
         }
@@ -132,13 +133,4 @@ void connect_new_client(fd_set *master, int *client_fds, server_data *server){
     FD_SET(new_client_fd, master);
 
     return;
-}
-
-
-void process_pkt(pkt_node* node){
-   switch(node->pkt->type){
-    case MSG_DM:
-
-    return;
-   } 
 }
