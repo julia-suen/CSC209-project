@@ -43,27 +43,81 @@ int main() {
     }
 
     // Send one packet test - no user input invovled 
-    Packet pkt;
-    init_packet(&pkt);
-    strcpy(pkt.message, "hello");
-    send_packet(soc, &pkt);
+    // Packet pkt;
+    // init_packet(&pkt);
+    // strcpy(pkt.message, "hello");
+    // send_packet(soc, &pkt);
 
     // initialize pkt before loop
+    // char buf[512];
+
+    // while (1) {
+    //     // Read user input
+    //     int n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+    //     if (n > 0) {
+    //         buf[n] = '\0';  // null terminate
+
+    //         // TODO: maybe trim new line before sending
+    //         init_packet(&pkt);
+    //         strcpy(pkt.message, buf);
+
+    //         send_packet(soc, &pkt);
+    //     }
+    // }
+
+    fd_set read_fds;
+    Packet pkt;
     char buf[512];
 
-while (1) {
-    // Read user input
-    int n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
-    if (n > 0) {
-        buf[n] = '\0';  // null terminate
+    while (1) {
+        FD_ZERO(&read_fds);
+        FD_SET(STDIN_FILENO, &read_fds);    // read user input from stdin
+        FD_SET(soc, &read_fds);             // read message sent from server
+        
+        int num_fd;
+        if (STDIN_FILENO > soc) {
+            num_fd = STDIN_FILENO + 1;
+        } else {
+            num_fd = soc + 1;
+        }
+        
+        // int max_fd = (soc > STDIN_FILENO ? soc : STDIN_FILENO) + 1;
 
-        // TODO: maybe trim new line before sending
-        init_packet(&pkt);
-        strcpy(pkt.message, buf);
+        // call select
+        int ready = select(num_fd, &read_fds, NULL, NULL, NULL);
 
-        send_packet(soc, &pkt);
+        if (ready < 0) {
+            perror("select");
+            exit(1);
+        }
+
+        // User input 
+        if (FD_ISSET(STDIN_FILENO, &read_fds)) {
+            int n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+
+            if (n > 0) {
+                buf[n] = '\0';
+                // trim_newline(buf);   TODO: move trim_newline from commands to common?
+
+                init_packet(&pkt);
+                strcpy(pkt.message, buf);
+
+                send_packet(soc, &pkt);
+            }
+        }
+
+        // Server message 
+        if (FD_ISSET(soc, &read_fds)) {
+            int status = recv_packet(soc, &pkt);
+
+            if (status <= 0) {
+                printf("Server disconnected.\n");
+                break;
+            }
+
+            print_packet(&pkt);  // TODO: change to ui.c's function to display message 
+        }
     }
-}
     return 0;
 }
 
