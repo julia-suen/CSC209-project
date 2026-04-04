@@ -38,7 +38,7 @@ void remove_pkt_and_deallocate(pkt_node *pkt, server_data *server){
     pkt->prev->next = pkt->next;
     free(pkt->pkt);
     free(pkt);
-    return
+    return;
 }
 
 void process_dm(int* clients, Packet* pkt){
