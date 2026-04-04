@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <protocol.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -7,6 +8,8 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
+#define PORT 58086      # hardcode port number
 
 int main() {
     // create socket
@@ -19,23 +22,48 @@ int main() {
     //initialize server address    
     struct sockaddr_in server;
     server.sin_family = AF_INET;
-    server.sin_port = htons(58086);  
+    server.sin_port = htons(PORT);  
     memset(&server.sin_zero, 0, 8);
     
     struct addrinfo *ai;
     char * hostname = "teach.cs.toronto.edu";
 
-    /* this call declares memory and populates ailist */
+    // declares memory and populates ailist 
     getaddrinfo(hostname, NULL, NULL, &ai);
-    /* we only make use of the first element in the list */
+    // we only make use of the first element in the list 
     server.sin_addr = ((struct sockaddr_in *) ai->ai_addr)->sin_addr;
 
     // free the memory that was allocated by getaddrinfo for this list
     freeaddrinfo(ai);
 
     int ret = connect(soc, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
+    if (ret == -1){
+        perror("connect");
+        exit(1);
+    }
 
-    printf("Connect returned %d\n", ret);
+    // Send one packet test - no user input invovled 
+    Packet pkt;
+    init_packet(&pkt);
+    strcpy(pkt.message, "hello");
+    send_packet(soc, &pkt);
+
+    // initialize pkt before loop
+    char buf[512];
+
+while (1) {
+    // Read user input
+    int n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+    if (n > 0) {
+        buf[n] = '\0';  // null terminate
+
+        // TODO: maybe trim new line before sending
+        init_packet(&pkt);
+        strcpy(pkt.message, buf);
+
+        send_packet(soc, &pkt);
+    }
+}
     return 0;
 }
 
