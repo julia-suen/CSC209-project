@@ -10,6 +10,8 @@
 #include <time.h>
 #include <fcntl.h>
 
+#define MAX_PKT_NUM 32
+
 void fd_check_readable(fd_set *read_fds, int server_fd, int *clients, int num_clients){
     int max_fd = server_fd;
     FD_SET(server_fd, read_fds);
@@ -41,16 +43,30 @@ void connect_new_client(fd_set *read_fds, int server_fd, int *clients, int *clie
     return;
 }
 
-void read_from_client(int client_fd){
-    return;
+int read_from_client(int client_fd, Packet *pkt){
+    return recv_packet(client_fd, pkt);
 }
+
+void remove_client_from_list(int *client_fds, int client_fd, int *num_clients){
+    int i;
+    for (i = 0; i < num_clients; i++){
+        if (client_fds[i] == client_fd){
+            break;
+        }
+    }
+    for (i; i< num_clients - 1; i++){
+        client_fds[i] = client_fds[i+1];
+    }
+    (*num_clients)--;
+}
+
 
 void main(){
     // setup
     int server_fd;
     fd_set read_fds;
-    // temp max connection of 16
-    int client_fds[16];
+    // TODO: implement over connection checking.
+    int client_fds[MAX_USER];
     int num_clients = 0;
     FD_ZERO(&read_fds);
 
@@ -87,9 +103,12 @@ void main(){
         for (int i = 0; i < num_clients; i++)
         {
             if (FD_ISSET(client_fds[i], &read_fds)){
-                read_from_client(client_fds[i]);
+                Packet *in_pkt;
+                if(read_from_client(client_fds[i], in_pkt) == 1){
+                    //connection closed
+                    remove_client_from_list(client_fds, client_fds[i], &num_clients);
+                }
             }
         }
     }
-
 }
