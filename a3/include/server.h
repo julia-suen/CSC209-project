@@ -2,11 +2,11 @@
 #define SERVER_H
 
 #include "../include/protocol.h"
+#include "../include/common.h"
 #include <netinet/in.h>
 #include <sys/select.h>
 
 #define MAX_PKTS 32
-#define TIMEOUT 1
 typedef struct {
     int server_fd;
     int num_clients;
@@ -30,7 +30,9 @@ typedef struct{
 
 typedef struct{
     int fd;
-    char usrid[MAX_USER];
-}usr_data;
+    client *data;
+    client *prev;
+    client *next;
+}usr_node;
 
 #endif

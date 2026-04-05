@@ -15,17 +15,16 @@
 
 void main(){
     server_data server;
-    pkt_node *node_head = NULL;
+    pkt_node *pkt_head = NULL;
     fd_set master_list;
     chatroom *rooms = rooms_set_up(4);
     FD_ZERO(&master_list);
-    int *clients[MAX_USER];
+    usr_node *usr_head = NULL;
 
     // Uhh is this even good to do?
 
     server.num_clients = 0;
     server.num_packets = 0;
-    server.clients = clients;
 
 
     struct sockaddr_in addr;
@@ -60,14 +59,14 @@ void main(){
         fd_set rfds;
         FD_ZERO(&rfds);
         rfds = master_list;
-        select(server.max_fd + 1, &rfds, NULL, NULL, TIMEOUT);
+        select(server.max_fd + 1, &rfds, NULL, NULL, NULL);
         // connect  block
         if (FD_ISSET(server.server_fd, &rfds)){
-            connect_new_client(&rfds, clients, &server);
+            connect_new_client(&rfds, usr_head, &server);
         }
 
         // read block
-        recieve_until_full(clients, &rfds, node_head, &server);
+        recieve_until_full(usr_head, &rfds, pkt_head, &server);
 
         // write block
         if (server.num_packets > 0){
@@ -75,13 +74,27 @@ void main(){
             FD_ZERO(&wfds);
             wfds = master_list;
 
-            pkt_node *curr_node = node_head;
+            pkt_node *curr_node = pkt_head;
             while(curr_node){
                 switch (curr_node->pkt->type){
-                    case MSG_DM:
-                        process_dm(clients, curr_node->pkt);
                     case MSG_TEXT:
-                        process_text(clients, curr_node->pkt);
+                        process_text(clients, curr_node);
+                    case MSG_DM:
+                        process_dm(clients, curr_node);
+                    case MSG_LEAVE:
+                        process_leave();
+                    case MSG_JOIN:
+                        process_join();
+                    case MSG_NICK:
+                        process_nick();
+                    case MSG_WHO:
+                        process_who();
+                    case MSG_LIST:
+                        process_list();
+                    case MSG_QUIT:
+                        process_quit();
+                    case MSG_ERROR:
+                        
                     default:
                 }
             }
@@ -104,24 +117,49 @@ int recieve_until_full(int *fds, fd_set *rfd, pkt_node *pkts, server_data *serve
 }
 
 
-void connect_new_client(fd_set *master, int *client_fds, server_data *server){
+void connect_new_client(fd_set *master, usr_node *clients, server_data *server){
 
-    struct sockaddr_in new_client;
-    new_client.sin_family = AF_INET;
+    struct sockaddr_in nc_addr;
+    nc_addr.sin_family = AF_INET;
     unsigned int client_len = sizeof(struct sockaddr_in);
 
-    int new_client_fd = accept(server->server_fd, (struct sockaddr *) &new_client, &client_len);
+    int new_client_fd = accept(server->server_fd, (struct sockaddr *) &nc_addr, &client_len);
     
     if (new_client_fd < 0){
         perror("accept failed");
         return;
     }
+    
+    //create new_client
+    client *new_client = malloc(sizeof(client));
+    new_client->client_id = generate_user_id(clients);
+    memset(new_client->nick, '\0', sizeof(new_client->nick));
+    strncat(new_client->nick, itoa(new_client->client_id), 32);
 
+    //create client node
+    usr_node *new_node = malloc(sizeof(usr_node));
+    new_node->data = new_client;
+
+    //set new max_fd
     if (new_client_fd > server->max_fd) server->max_fd = new_client_fd;
-    client_fds[server->num_clients] = new_client_fd;
+
+    //add to client list
+    add_client_to_list(clients, new_node, *);
     server->num_clients++;
 
     FD_SET(new_client_fd, master);
 
     return;
+}
+
+int generate_user_id(usr_node *clients){
+    int id = rand() % 1000;
+    usr_node *pt = clients;
+    while(clients){
+        if (clients->data->client_id == id){
+            id = rand() % 1000;
+            pt = clients;
+        }
+    }
+    return id;
 }

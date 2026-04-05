@@ -41,10 +41,18 @@ void remove_pkt_and_deallocate(pkt_node *pkt, server_data *server){
     return;
 }
 
-void process_dm(int* clients, Packet* pkt){
+client *get_client_by_id(int id, client *list){
+    if(!list) return NULL;
+    while(list->next){
+        if()
+    }
+}
+
+void process_dm(int *clients, pkt_node *pkt){
+
     return;
 }
 
-void process_text(int* clients, Packet* pkt){
+void process_text(int *clients, Packet *pkt){
     return;
 }
