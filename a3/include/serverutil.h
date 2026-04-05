@@ -3,6 +3,7 @@
 
 #include "../include/protocol.h"
 #include "../include/server.h"
+#include "../include/common.h"
 #include "../include/protocol.h"
 
 #include <netinet/in.h>

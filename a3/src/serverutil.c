@@ -1,17 +1,25 @@
 #include "../include/protocol.h"
+#include "../include/common.h"
 #include "../include/server.h"
+#include <stdlib.h>
 
+// TODO: change to int to check if remove is success or failure just in case?
 void remove_client_from_list(int *client_fds, int client_fd, int *num_clients){
     int i;
-    for (i = 0; i < num_clients; i++){
+    int found_index;
+    for (i = 0; i < *num_clients; i++){
         if (client_fds[i] == client_fd){
+            found_index = i;
             break;
         }
     }
-    for (i; i< num_clients - 1; i++){
-        client_fds[i] = client_fds[i+1];
+
+    if (found_index != -1) {
+        for (i = found_index; i< (*num_clients) - 1; i++){
+            client_fds[i] = client_fds[i+1];
+        }
+        (*num_clients)--;
     }
-    (*num_clients)--;
 }
 
 
@@ -45,6 +53,6 @@ void process_dm(int* clients, Packet* pkt){
     return;
 }
 
-void process_text(int* clients, Packet* pkt){
+void process_msg(int* clients, Packet* pkt){
     return;
 }

@@ -16,21 +16,13 @@ typedef struct {
     int *clients;
 } server_data;
 
-typedef struct {
-    int room_id;
-    int num_users;
-    int *user_fds[MAX_USER];
-} chatroom;
 
-typedef struct{
+typedef struct pkt_node pkt_node;
+struct pkt_node{
     Packet* pkt;
     pkt_node *next;
     pkt_node *prev;
-} pkt_node;
+};
 
-typedef struct{
-    int fd;
-    char usrid[MAX_USER];
-}usr_data;
 
 #endif
