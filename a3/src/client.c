@@ -7,8 +7,85 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "protocol.h"
+#include "commands.h"
 
-#define PORT 58086      # hardcode port number
+#define PORT 58086      // hardcode port number
+
+int handle_user_input(int soc, const char *buf) {
+    // initialize command
+    Command cmd;
+    
+    if (parse_command(buf, &cmd) != 0) {
+        printf("Invalid command.\n");
+        return 0;  // continue running
+    }
+
+    // debug
+    // print_command(&cmd);
+
+    if (cmd.type == CMD_QUIT) {
+        close(soc);
+        return 1;  // signal to exit
+    }
+
+    // initialize packet
+    Packet pkt;
+    init_packet(&pkt);
+
+    // set packet according to the command type
+    switch (cmd.type) {
+        case CMD_TEXT:
+            pkt.type = MSG_TEXT;
+            strcpy(pkt.message, cmd.arg2);
+            break;
+
+        case CMD_MSG:
+            pkt.type = MSG_PRIVATE;
+            strcpy(pkt.destination, cmd.arg1);
+            strcpy(pkt.message, cmd.arg2);
+            break;
+
+        case CMD_NICK:
+            pkt.type = MSG_NICK;
+            strcpy(pkt.message, cmd.arg1);      // put nickname in packet's message
+            break;
+
+        case CMD_JOIN:
+            pkt.type = MSG_JOIN;
+            strcpy(pkt.destination, cmd.arg1);
+            break;
+
+        case CMD_LEAVE:
+            pkt.type = MSG_LEAVE;
+            strcpy(pkt.destination, cmd.arg1);
+            break;
+
+        case CMD_WHO:
+            pkt.type = MSG_WHO;
+            break;
+
+        case CMD_LIST:
+            pkt.type = MSG_LIST;
+            break;
+
+        case CMD_HELP:
+            pkt.type = MSG_HELP;
+            break;
+
+        default:
+            printf("Invalid command.\n");
+            return 0;
+    }
+
+    if (send_packet(soc, &pkt) < 0) {
+        perrpr("send_packet");
+        return -1;
+    }
+
+    return 0;
+}
+
 
 int main() {
     // create socket
@@ -80,8 +157,6 @@ int main() {
             num_fd = soc + 1;
         }
         
-        // int max_fd = (soc > STDIN_FILENO ? soc : STDIN_FILENO) + 1;
-
         // call select
         int ready = select(num_fd, &read_fds, NULL, NULL, NULL);
 
@@ -94,14 +169,21 @@ int main() {
         if (FD_ISSET(STDIN_FILENO, &read_fds)) {
             int n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
 
+            if (n == 0){
+                close(soc);
+                fprintf(stderr, "EOF: exiting\n");
+                break;
+            }
             if (n > 0) {
                 buf[n] = '\0';
-                // trim_newline(buf);   TODO: move trim_newline from commands to common?
+                
+                if (handle_user_input(soc, buf) != 0) {   // if return 1, user quit 
+                    break;
+                }   
+                // init_packet(&pkt);
+                // strcpy(pkt.message, buf);
 
-                init_packet(&pkt);
-                strcpy(pkt.message, buf);
-
-                send_packet(soc, &pkt);
+                // send_packet(soc, &pkt);
             }
         }
 
@@ -110,7 +192,7 @@ int main() {
             int status = recv_packet(soc, &pkt);
 
             if (status <= 0) {
-                printf("Server disconnected.\n");
+                fprintf(stderr, "Server disconnected.\n");
                 break;
             }
 
