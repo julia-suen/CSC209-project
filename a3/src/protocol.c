@@ -48,7 +48,7 @@ int recv_packet(int fd, Packet *pkt) {
         }
 
         if (n == 0) {
-            return 1;  // client disconnected
+            return 1;   /* peer disconnected cleanly */
         }
 
         total_read += (size_t)n;
@@ -64,7 +64,7 @@ void init_packet(Packet *pkt) {
 
     memset(pkt, 0, sizeof(Packet));
     pkt->type = MSG_TEXT;
-    pkt->timestamp = time(NULL);   // real timestamp
+    pkt->timestamp = time(NULL);
 }
 
 void print_packet(const Packet *pkt) {
@@ -79,4 +79,68 @@ void print_packet(const Packet *pkt) {
     printf("message: %s\n", pkt->message);
     printf("timestamp: %ld\n", (long)pkt->timestamp);
     printf("------------------------\n");
+}
+
+int valid_packet_type(MessageType type) {
+    return type >= MSG_TEXT && type <= MSG_ERROR;
+}
+
+int validate_packet(const Packet *pkt) {
+    if (pkt == NULL) {
+        return 0;
+    }
+
+    if (!valid_packet_type(pkt->type)) {
+        return 0;
+    }
+
+    switch (pkt->type) {
+        case MSG_TEXT:
+            /* room message: needs destination + message */
+            if (pkt->destination[0] == '\0' || pkt->message[0] == '\0') {
+                return 0;
+            }
+            break;
+
+        case MSG_DM:
+            /* dm: needs target user + message */
+            if (pkt->destination[0] == '\0' || pkt->message[0] == '\0') {
+                return 0;
+            }
+            break;
+
+        case MSG_JOIN:
+        case MSG_LEAVE:
+            /* room actions need destination room */
+            if (pkt->destination[0] == '\0') {
+                return 0;
+            }
+            break;
+
+        case MSG_NICK:
+            /* requested nickname stored in message */
+            if (pkt->message[0] == '\0') {
+                return 0;
+            }
+            break;
+
+        case MSG_WHO:
+        case MSG_LIST:
+        case MSG_QUIT:
+            /* these can be empty */
+            break;
+
+        case MSG_SYSTEM:
+        case MSG_ERROR:
+            /* server-generated informational packets */
+            if (pkt->message[0] == '\0') {
+                return 0;
+            }
+            break;
+
+        default:
+            return 0;
+    }
+
+    return 1;
 }
