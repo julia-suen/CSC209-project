@@ -3,18 +3,22 @@
 #include "../include/protocol.h"
 #include <stddef.h>
 
+/* shared constants */
+#define MAX_USER 32
+#define MAX_MSG 512
+#define MAX_DEST 64
 
 /* user data */
 typedef struct {
     int fd;
-    char username[MAX_USER];
+    chat username[MAX_USER];
 } usr_data;
 
 /* chatroom */
 typedef struct {
     int room_id;
     int num_users;
-    int user_fds[MAX_USER];     // an array of int client_fd 
+    int *user_fds[MAX_USER];
 } chatroom;
 
 /* utility functions */

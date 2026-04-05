@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-void trim_newline(char *s) {
+static void trim_newline(char *s) {
     size_t len;
 
     if (s == NULL) {
@@ -39,7 +39,7 @@ int find_client_index(int *clients, int num_clients, int fd){
     return -1;
 }
 
-int find_client_by_name(usr_data *users, int num_users, const char *name){
+int find_client_by_name(urs_data *users, int num_users, const char *name){
     for (int i = 0; i < num_users; i++){
         if (strcmp(users[i].username, name) == 0){
             return i;

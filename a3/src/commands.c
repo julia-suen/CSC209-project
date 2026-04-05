@@ -1,23 +1,10 @@
 #include "../include/commands.h"
+#include "../include/common.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-static void trim_newline(char *s) {
-    size_t len;
-
-    if (s == NULL) {
-        return;
-    }
-
-    len = strlen(s);
-
-    while (len > 0 && (s[len - 1] == '\n' || s[len - 1] == '\r')) {
-        s[len - 1] = '\0';
-        len--;
-    }
-}
 
 static void skip_spaces(const char **p) {
     while (**p != '\0' && isspace((unsigned char)**p)) {
@@ -168,6 +155,85 @@ int parse_command(const char *input, Command *cmd) {
 
     cmd->type = CMD_INVALID;
     return -1;
+}
+
+int command_to_packet(const Command *cmd, Packet *pkt,
+                      const char *usrid, const char *current_room) {
+    if (cmd == NULL || pkt == NULL || usrid == NULL) {
+        return -1;
+    }
+
+    init_packet(pkt);
+
+    strncpy(pkt->usrid, usrid, MAX_USER - 1);
+    pkt->usrid[MAX_USER - 1] = '\0';
+
+    switch (cmd->type) {
+        case CMD_TEXT:
+            pkt->type = MSG_TEXT;
+
+            if (current_room != NULL) {
+                strncpy(pkt->destination, current_room, MAX_DEST - 1);
+                pkt->destination[MAX_DEST - 1] = '\0';
+            }
+
+            strncpy(pkt->message, cmd->arg2, MAX_MSG - 1);
+            pkt->message[MAX_MSG - 1] = '\0';
+            return 0;
+
+        case CMD_NICK:
+            pkt->type = MSG_NICK;
+            strncpy(pkt->message, cmd->arg1, MAX_MSG - 1);
+            pkt->message[MAX_MSG - 1] = '\0';
+            return 0;
+
+        case CMD_JOIN:
+            pkt->type = MSG_JOIN;
+            strncpy(pkt->destination, cmd->arg1, MAX_DEST - 1);
+            pkt->destination[MAX_DEST - 1] = '\0';
+            return 0;
+
+        case CMD_LEAVE:
+            pkt->type = MSG_LEAVE;
+
+            if (cmd->arg1[0] != '\0') {
+                strncpy(pkt->destination, cmd->arg1, MAX_DEST - 1);
+                pkt->destination[MAX_DEST - 1] = '\0';
+            } else if (current_room != NULL) {
+                strncpy(pkt->destination, current_room, MAX_DEST - 1);
+                pkt->destination[MAX_DEST - 1] = '\0';
+            }
+
+            return 0;
+
+        case CMD_MSG:
+            pkt->type = MSG_DM;
+            strncpy(pkt->destination, cmd->arg1, MAX_DEST - 1);
+            pkt->destination[MAX_DEST - 1] = '\0';
+
+            strncpy(pkt->message, cmd->arg2, MAX_MSG - 1);
+            pkt->message[MAX_MSG - 1] = '\0';
+            return 0;
+
+        case CMD_WHO:
+            pkt->type = MSG_WHO;
+            return 0;
+
+        case CMD_LIST:
+            pkt->type = MSG_LIST;
+            return 0;
+
+        case CMD_QUIT:
+            pkt->type = MSG_QUIT;
+            return 0;
+
+        case CMD_HELP:
+            return -1;
+
+        case CMD_INVALID:
+        default:
+            return -1;
+    }
 }
 
 void print_command(const Command *cmd) {

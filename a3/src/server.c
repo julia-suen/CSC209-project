@@ -1,10 +1,10 @@
 #include "../include/protocol.h"
 #include "../include/server.h"
 #include "../include/serverutil.h"
+
 #include "../include/common.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -13,50 +13,13 @@
 #include <errno.h>
 #include <time.h>
 
-// temp: return 0 on success
-// need to call add_to_pkt_list?
-int receive_until_full(int *fds, fd_set *rfd, pkt_node *pkts, server_data *server){
-    for (int i = 0; i < server->num_clients; i++){
-        if (server->num_packets >= 32) break;
-
-        if (FD_ISSET(fds[i], rfd)){
-            Packet *in_pkt = malloc(sizeof(Packet));
-            recv_packet(fds[i], in_pkt);
-        }
-    }
-    return 0;
-}
-
-void connect_new_client(fd_set *master, int *client_fds, server_data *server){
-
-    struct sockaddr_in new_client;
-    new_client.sin_family = AF_INET;
-    unsigned int client_len = sizeof(struct sockaddr_in);
-
-    int new_client_fd = accept(server->server_fd, (struct sockaddr *) &new_client, &client_len);
-    
-    if (new_client_fd < 0){
-        perror("accept failed");
-        return;
-    }
-
-    if (new_client_fd > server->max_fd) server->max_fd = new_client_fd;
-    client_fds[server->num_clients] = new_client_fd;
-    server->num_clients++;
-
-    FD_SET(new_client_fd, master);
-
-    return;
-}
-
-
-int main(){
+void main(){
     server_data server;
     pkt_node *node_head = NULL;
     fd_set master_list;
-    // chatroom *rooms = rooms_set_up(4);       // temporary comment to compile for now 
+    chatroom *rooms = rooms_set_up(4);
     FD_ZERO(&master_list);
-    int clients[MAX_USER];
+    int *clients[MAX_USER];
 
     // Uhh is this even good to do?
 
@@ -83,7 +46,7 @@ int main(){
     memset(&(addr.sin_zero), 0, 8);
 
     if (bind(server.server_fd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) == -1){
-        perror("bind");
+        perror('bind');
         close(server.server_fd);
         exit(1);
     }
@@ -104,7 +67,7 @@ int main(){
         }
 
         // read block
-        // receive_until_full(clients, &rfds, node_head, &server);              // TEMPORARY COMMENTED OUT TO COMPILE
+        recieve_until_full(clients, &rfds, node_head, &server);
 
         // write block
         if (server.num_packets > 0){
@@ -117,14 +80,48 @@ int main(){
                 switch (curr_node->pkt->type){
                     case MSG_DM:
                         process_dm(clients, curr_node->pkt);
-                        break;
                     case MSG_TEXT:
-                        process_msg(clients, curr_node->pkt);
-                        break;
+                        process_text(clients, curr_node->pkt);
                     default:
                 }
             }
         }
     }
             
+}
+
+
+int recieve_until_full(int *fds, fd_set *rfd, pkt_node *pkts, server_data *server){
+    for (int i = 0; i < server->num_clients; i++){
+        if (server->num_packets >= 32) break;
+
+        if (FD_ISSET(fds[i], rfd)){
+            Packet *in_pkt = malloc(sizeof(Packet));
+            recv_packet(fds[i], in_pkt);
+        }
+    }
+    return;
+}
+
+
+void connect_new_client(fd_set *master, int *client_fds, server_data *server){
+
+    struct sockaddr_in new_client;
+    new_client.sin_family = AF_INET;
+    unsigned int client_len = sizeof(struct sockaddr_in);
+
+    int new_client_fd = accept(server->server_fd, (struct sockaddr *) &new_client, &client_len);
+    
+    if (new_client_fd < 0){
+        perror("accept failed");
+        return;
+    }
+
+    if (new_client_fd > server->max_fd) server->max_fd = new_client_fd;
+    client_fds[server->num_clients] = new_client_fd;
+    server->num_clients++;
+
+    FD_SET(new_client_fd, master);
+
+    return;
 }
