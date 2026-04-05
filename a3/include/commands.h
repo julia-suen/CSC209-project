@@ -2,6 +2,7 @@
 #define COMMANDS_H
 
 #include "protocol.h"
+#include "common.h"
 
 typedef enum {
     CMD_TEXT,
@@ -34,5 +35,8 @@ int parse_command(const char *input, Command *cmd);
 
 /* Optional debugging helper */
 void print_command(const Command *cmd);
+
+int command_to_packet(const Command *cmd, Packet *pkt,
+                      const char *usrid, const char *current_room);
 
 #endif
