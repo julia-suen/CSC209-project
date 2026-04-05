@@ -90,15 +90,6 @@ void main(){
             
 }
 
-chatroom* rooms_set_up (int n){
-    chatroom *rooms = malloc(sizeof(chatroom) * n);
-    for (int i = 0; i < n; i ++){
-        rooms[i].room_id = i;
-        rooms[i].num_users = 0;
-    }
-    return rooms;
-}
-
 
 int recieve_until_full(int *fds, fd_set *rfd, pkt_node *pkts, server_data *server){
     for (int i = 0; i < server->num_clients; i++){
