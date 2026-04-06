@@ -22,6 +22,6 @@ int process_join(usr_data* clients, int num_client, chatroom *rooms, Packet *pkt
 int process_nick(usr_data *clients, int num_clients, int fd, Packet *pkt);
 int process_who(usr_data* clients, int fd, chatroom *rooms, server_data *server);
 int process_list(usr_data* clients, int fd, chatroom *rooms, server_data *server);
-int process_quit(chatroom *rooms, int num_rooms, int fd, Packet *pkt);
+int process_quit(fd_set *master_list, usr_data* clients, chatroom *rooms, int num_rooms, int fd, Packet *pkt, server_data *server);
 
 #endif
