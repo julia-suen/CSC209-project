@@ -2,6 +2,9 @@
 
 all: bin/server bin/client
 
+# Compile client
+client: src/client.c src/common.c src/protocol.c
+	gcc -Wall -Wextra -g -Isrc/include src/client.c src/common.c src/protocol.c src/ui.c src/commands.c -o client
 
 bin/server: obj/server.o obj/serverutil.o obj/protocol.o obj/common.o
 	mkdir bin
