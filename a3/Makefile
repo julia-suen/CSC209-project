@@ -5,8 +5,8 @@ all: setup bin/server bin/client
 # This runs first and creates the folders. 
 # The '-' means "keep going even if the folder already exists"
 setup:
-	-mkdir bin
-	-mkdir obj
+	mkdir bin
+	mkdir obj
 
 # Linking the Server
 bin/server: obj/server.o obj/serverutil.o obj/protocol.o obj/common.o
