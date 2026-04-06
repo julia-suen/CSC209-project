@@ -44,13 +44,27 @@ int get_username(char *username, int soc) {
         init_packet(&pkt);
         pkt.type = MSG_NICK;
         strcpy(pkt.message, username);
-
+        
+        // send username packet
         if (send_packet(soc, &pkt) < 0) {
             perror("send_packet");
             return -1;
         }
 
-        // TODO: add server's check for duplicate username 
+        // receive response from server
+        if (recv_packet(soc, &pkt) <= 0) {
+            return -1;
+        }
+
+        if (pkt.type == MSG_ERROR){
+            // duplicate username
+            printf("This username is already taken, try again.\n");
+            continue;
+        } else if (pkt.type == MSG_SYSTEM) {
+            // nickname accepted
+            printf("%s\n", pkt.message);
+            break;
+        }
 
         break;  // exit loop when valid nickname packet sucessfully sent
     }
