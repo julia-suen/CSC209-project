@@ -42,7 +42,7 @@ void main(){
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     // todo fix port
-    addr.sin_port = htons(8080);
+    addr.sin_port = htons(PORT);
     memset(&(addr.sin_zero), 0, 8);
 
     if (bind(server.server_fd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) == -1){
