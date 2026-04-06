@@ -1,33 +1,62 @@
 #include "../include/ui.h"
 
 #include <stdio.h>
+#include <time.h>
+
+static void get_time_str(char *buf, size_t size){
+    time_t now = time(NULL);
+    struct tm *tm_info;
+
+    if (buf == NULL || size == 0){
+        return;
+    }
+    tm_info = localtime(&now);
+    if (tm_info == NULL){
+        buf[0] = '\0';
+        return;
+    }
+    strftime(buf, size, "%H:%M", tm_info);
+}
 
 void print_system_message(const char *msg) {
+    char timebuf[6];
+
     if (msg == NULL) {
         return;
     }
-    printf("[SYSTEM] %s\n", msg);
+    get_time_str(timebuf, sizeof(timebuf));
+    printf("[%s] [SYSTEM] %s\n",timebuf, msg);
 }
 
 void print_error_message(const char *msg) {
+    char timebuf[6];
     if (msg == NULL) {
         return;
     }
-    printf("[ERROR] %s\n", msg);
+    get_time_str(timebuf, sizeof(timebuf));
+    printf("[%s] [ERROR] %s\n",timebuf, msg);
 }
 
-void print_chat_message(const char *user, const char *msg) {
+void print_chat_message(const char *user, const char *room, const char *msg) {
+    char timebuf[6];
     if (user == NULL || msg == NULL) {
         return;
     }
-    printf("[%s] %s\n", user, msg);
+    get_time_str(timebuf, sizeof(timebuf));
+    if (room != NULL && room[0] != '\0') {
+        printf("[%s] [%s] %s: %s\n", timebuf, room, user, msg);
+    } else {
+        printf("[%s] %s: %s\n", timebuf, user, msg);
+    }
 }
 
 void print_dm_message(const char *user, const char *msg) {
+    char timebuf[6];
     if (user == NULL || msg == NULL) {
         return;
     }
-    printf("[DM from %s] %s\n", user, msg);
+    get_time_str(timebuf, sizeof(timebuf));
+    printf("[%s] [DM from %s] %s\n", timebuf, user, msg);
 }
 
 void print_help_menu(void) {
@@ -42,9 +71,18 @@ void print_help_menu(void) {
     printf("  /help\n");
 }
 
-void print_prompt(void) {
-    printf("> ");
+void print_prompt(const char *user, const char *room) {
+    if (user != NULL && room != NULL &&
+        user[0] != '\0' && room[0] != '\0') {
+        printf("[%s@%s] > ", user, room);
+    } else if (user != NULL && user[0] != '\0') {
+        printf("[%s] > ", user);
+    } else {
+        printf("> ");
+    }
+
     fflush(stdout);
+
 }
 
 void display_packet(const Packet *pkt) {
@@ -54,7 +92,7 @@ void display_packet(const Packet *pkt) {
 
     switch (pkt->type) {
         case MSG_TEXT:
-            print_chat_message(pkt->usrid, pkt->message);
+            print_chat_message(pkt->usrid, pkt->destination, pkt->message);
             break;
 
         case MSG_DM:
@@ -70,31 +108,16 @@ void display_packet(const Packet *pkt) {
             break;
 
         case MSG_JOIN:
-            print_system_message(pkt->message);
-            break;
-
         case MSG_LEAVE:
-            print_system_message(pkt->message);
-            break;
-
         case MSG_NICK:
-            print_system_message(pkt->message);
-            break;
-
         case MSG_WHO:
-            print_system_message(pkt->message);
-            break;
-
         case MSG_LIST:
-            print_system_message(pkt->message);
-            break;
-
         case MSG_QUIT:
             print_system_message(pkt->message);
             break;
 
         default:
-            printf("[TYPE %d] %s\n", pkt->type, pkt->message);
+            printf("[UNKNOWN TYPE %d] %s\n", pkt->type, pkt->message);
             break;
     }
 }
