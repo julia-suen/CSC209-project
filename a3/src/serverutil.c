@@ -274,7 +274,6 @@ int process_list(usr_data* clients, int fd, chatroom *room_head, int num_clients
     return 0;
 }
 
-int process_quit(fd_set *master_list, usr_data* clients, chatroom **room_head, int fd, Packet *pkt, server_data *server){
 int process_quit(fd_set *master_list, usr_data* clients, chatroom *rooms, int fd, server_data *server){
     int client_index = find_client_index(clients, server->num_clients, fd);
     if (strlen(clients[client_index].room_id) != 0){
