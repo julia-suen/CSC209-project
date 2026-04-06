@@ -74,9 +74,14 @@ void main(){
             fd_set wfds;
             FD_ZERO(&wfds);
             wfds = master_list;
+            select(server.max_fd +1, NULL, &wfds, NULL, NULL);
 
             pkt_node *curr_node = pkt_head;
             while(curr_node){
+                if (!FD_ISSET(curr_node->sender_fd, &wfds)){
+                    continue;
+                }
+
                 switch (curr_node->pkt->type){
                     case MSG_TEXT:
                         process_text(rooms, curr_node->pkt, &server);
@@ -100,9 +105,8 @@ void main(){
                         process_list();
                         break;
                     case MSG_QUIT:
-                        process_quit();
+                        process_quit(rooms, server.num_rooms, curr_node->sender_fd, curr_node->pkt);
                         break;
-                        
                     default:
                 }
                 remove_pkt_and_deallocate(pkt_head, curr_node);
