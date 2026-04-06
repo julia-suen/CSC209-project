@@ -17,6 +17,7 @@
 int get_username(char *username, int soc) {
     while (1) {
         printf("Enter your username: ");
+        fflush(stdout);
 
         int n = read(STDIN_FILENO, username, MAX_USER - 1);
         if (n <= 0) { 
@@ -51,7 +52,7 @@ int get_username(char *username, int soc) {
         }
 
         // receive response from server
-        if (recv_packet(soc, &pkt) <= 0) {
+        if (recv_packet(soc, &pkt) < 0) {
             return -1;
         }
 
@@ -82,9 +83,6 @@ int handle_user_input(int soc, const char *buf) {
         printf("Invalid command.\n");
         return 0;  // continue running
     }
-
-    // debug
-    // print_command(&cmd);
 
     if (cmd.type == CMD_QUIT) {
         // send quit packet to server
@@ -211,12 +209,6 @@ int main() {
         exit(0);
     }
 
-    // Send one packet test - no user input invovled 
-    // Packet pkt;
-    // init_packet(&pkt);
-    // strcpy(pkt.message, "hello");
-    // send_packet(soc, &pkt);
-
     fd_set read_fds;
     Packet pkt;
     char buf[512];
@@ -273,7 +265,7 @@ int main() {
         if (FD_ISSET(soc, &read_fds)) {
             int status = recv_packet(soc, &pkt);
 
-            if (status <= 0) {
+            if (status < 0) {
                 fprintf(stderr, "Server disconnected.\n");
                 break;
             }
