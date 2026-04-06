@@ -5,6 +5,7 @@
 #include <netinet/in.h>    /* Internet domain header */
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <arpa/inet.h>
 #include "../include/protocol.h"
 #include "../include/commands.h"
@@ -108,7 +109,7 @@ int handle_user_input(int soc, const char *buf) {
             break;
 
         case CMD_MSG:
-            pkt.type = MSG_PRIVATE;
+            pkt.type = MSG_DM;
             strncpy(pkt.destination, cmd.arg1, MAX_USER - 1);
             pkt.destination[MAX_USER - 1] = '\0';
             strncpy(pkt.message, cmd.arg2, MAX_MSG - 1);
@@ -141,9 +142,9 @@ int handle_user_input(int soc, const char *buf) {
             pkt.type = MSG_LIST;
             break;
 
-        case CMD_HELP:
-            pkt.type = MSG_HELP;
-            break;
+        // case CMD_HELP:
+        //     pkt.type = MSG_HELP;
+        //     break;
 
         default:
             printf("Invalid command.\n");
@@ -174,7 +175,7 @@ int main() {
     memset(&server.sin_zero, 0, 8);
     
     struct addrinfo *ai;
-    char * hostname = "teach.cs.toronto.edu";
+    char * hostname = "127.0.0.1";
 
     // declares memory and populates ailist 
     if(getaddrinfo(hostname, NULL, NULL, &ai) != 0){
@@ -190,6 +191,7 @@ int main() {
 
     // connect to server
     int ret = connect(soc, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
+    printf("connected");
     if (ret == -1){
         perror("connect");
         exit(1);

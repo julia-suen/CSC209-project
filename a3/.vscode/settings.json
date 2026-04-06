@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/mnt/h/CSC209A3/CSC209-project/a3",
+            "binaryPath": "/mnt/h/CSC209A3/CSC209-project/a3/server",
+            "binaryArgs": []
+        }
+    ]
+}
