@@ -24,6 +24,4 @@ int find_client_by_name(usr_data *users, int num_users, const char *name);
 int add_user_to_room(chatroom *room, int client_fd);
 int remove_user_from_room(chatroom *room, int client_fd);
 
-int get_room_by_name(chatroom *list, int num_room, char* name);
-
 #endif
