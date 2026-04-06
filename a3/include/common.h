@@ -7,7 +7,6 @@
 #define MAX_USER 32
 #define MAX_MSG 512
 #define MAX_DEST 64
-#define PORT 58086
 /* user data */
 typedef struct {
     int fd;
