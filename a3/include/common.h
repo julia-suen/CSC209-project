@@ -5,16 +5,18 @@
 #include <stddef.h>
 
 
-typedef struct {
-    int room_id;
-    int num_users;
+typedef struct chatroom{
+    char room_id[MAX_DEST];
     int user_fds[MAX_USER];
+    int num_users;
+    struct chatroom *prev;
+    struct chatroom *next;
 } chatroom;
 
 typedef struct {
     int fd;
     char username[MAX_USER];
-    int room_id;
+    char room_id[MAX_DEST];
 } usr_data;
 
 void trim_newline(char *s);
@@ -23,9 +25,10 @@ chatroom *rooms_set_up(int n);
 int find_client_index(usr_data *clients, int num_clients, int fd);
 int find_client_by_name(usr_data *users, int num_users, const char *name);
 
+
 int add_user_to_room(chatroom *room, int client_fd);
 int remove_user_from_room(chatroom *room, int client_fd);
 
-int get_room_by_name(chatroom *list, int num_room, int name);
+chatroom *get_room_by_name(chatroom *head, char* name);
 
 #endif

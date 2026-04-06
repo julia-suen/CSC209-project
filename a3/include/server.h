@@ -13,7 +13,6 @@ typedef struct {
     int max_clients;
     int max_fd;
     int num_packets;
-    Packet *pkts;
     int num_rooms;
     int *clients;
 } server_data;

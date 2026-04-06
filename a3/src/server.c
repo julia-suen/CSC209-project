@@ -60,7 +60,7 @@ int connect_new_client(fd_set *master, usr_data *usr_list, server_data *server){
         return -1;
     }
     usr_list[server->num_clients].fd = new_client_fd;
-    usr_list[server->num_clients].room_id = -1;
+    memset(usr_list[server->num_clients].room_id, 0, MAX_DEST);
     char temp_name[MAX_USER];
     generate_random_name(temp_name, usr_list, server->num_clients);
     strncpy(usr_list[server->num_clients].username, temp_name, 32);
@@ -79,7 +79,7 @@ int main(){
     server_data server;
     pkt_node *pkt_head = NULL;
     fd_set master_list;
-    chatroom *rooms = rooms_set_up(4);
+    chatroom *room_head = NULL;
     fd_set ignore_list;
     server.num_rooms = 4;
     FD_ZERO(&master_list);
@@ -151,28 +151,28 @@ int main(){
 
                 switch (curr_node->pkt->type){
                     case MSG_TEXT:
-                        process_text(rooms, curr_node->pkt, server.num_rooms);
+                        process_text(usr_list, server.num_clients, curr_node->sender_fd, &room_head, curr_node->pkt, server.num_rooms);
                         break;
                     case MSG_DM:
                         process_dm(usr_list, curr_node->pkt, &server);
                         break;
                     case MSG_LEAVE:
-                        process_leave(rooms, usr_list, curr_node->sender_fd, server.num_clients);
+                        process_leave(usr_list, server.num_clients, &room_head, curr_node->sender_fd);
                         break;
                     case MSG_JOIN:
-                        process_join(usr_list, server.num_clients, rooms, curr_node->pkt, curr_node->sender_fd, server.num_rooms);
+                        process_join(usr_list, server.num_clients, &room_head, curr_node->pkt, curr_node->sender_fd);
                         break;
                     case MSG_NICK:
                         process_nick(usr_list, server.num_clients, curr_node->sender_fd, curr_node->pkt);
                         break;
                     case MSG_WHO:
-                        process_who(usr_list, curr_node->sender_fd, rooms, &server);
+                        process_who(usr_list, curr_node->sender_fd, room_head, server.num_clients);
                         break;
                     case MSG_LIST:
-                        process_list(usr_list, curr_node->sender_fd, rooms, &server);
+                        process_list(usr_list, curr_node->sender_fd, room_head, server.num_clients);
                         break;
                     case MSG_QUIT:
-                        process_quit(&master_list, usr_list, rooms, server.num_rooms, curr_node->sender_fd, curr_node->pkt, &server);
+                        process_quit(&master_list, usr_list, &room_head, curr_node->sender_fd, curr_node->pkt, &server);
                         break;
                     default:
                 }
