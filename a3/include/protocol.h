@@ -6,7 +6,7 @@
 #define MAX_USER 32
 #define MAX_DEST 32
 #define MAX_MSG 512
-#define PORT 58086
+// #define PORT 58086       # included in makefiles now
 
 /*
 Protocol notes:
