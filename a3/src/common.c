@@ -94,3 +94,14 @@ int remove_user_from_room(chatroom *room, int client_fd) {
 
     return 0;
 }
+
+
+int get_room_by_name(chatroom *list, int num_room, char* name){
+    int room_name = atoi(name);
+    for (int i = 0; i < num_room; i++){
+        if (room_name == list[i].room_id){
+            return i;
+        }
+    }
+    return -1;
+}

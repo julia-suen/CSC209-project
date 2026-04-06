@@ -15,17 +15,17 @@
 
 void main(){
     server_data server;
-    pkt_node *node_head = NULL;
+    pkt_node *pkt_head = NULL;
     fd_set master_list;
     chatroom *rooms = rooms_set_up(4);
+    server.num_rooms = 4;
     FD_ZERO(&master_list);
-    int *clients[MAX_USER];
-
+    server.max_clients = 16;
+    usr_data *usr_list = malloc(sizeof(usr_data *) * server.max_clients);
     // Uhh is this even good to do?
 
     server.num_clients = 0;
     server.num_packets = 0;
-    server.clients = clients;
 
 
     struct sockaddr_in addr;
@@ -42,7 +42,7 @@ void main(){
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     // todo fix port
-    addr.sin_port = htons(8080);
+    addr.sin_port = htons(PORT);
     memset(&(addr.sin_zero), 0, 8);
 
     if (bind(server.server_fd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) == -1){
@@ -60,30 +60,56 @@ void main(){
         fd_set rfds;
         FD_ZERO(&rfds);
         rfds = master_list;
-        select(server.max_fd + 1, &rfds, NULL, NULL, TIMEOUT);
+        select(server.max_fd + 1, &rfds, NULL, NULL, NULL);
         // connect  block
         if (FD_ISSET(server.server_fd, &rfds)){
-            connect_new_client(&rfds, clients, &server);
+            connect_new_client(&rfds, usr_list, &server);
         }
 
         // read block
-        recieve_until_full(clients, &rfds, node_head, &server);
+        recieve_until_full(usr_list, &rfds, pkt_head, &server);
 
         // write block
         if (server.num_packets > 0){
             fd_set wfds;
             FD_ZERO(&wfds);
             wfds = master_list;
+            select(server.max_fd +1, NULL, &wfds, NULL, NULL);
 
-            pkt_node *curr_node = node_head;
+            pkt_node *curr_node = pkt_head;
             while(curr_node){
+                if (!FD_ISSET(curr_node->sender_fd, &wfds)){
+                    continue;
+                }
+
                 switch (curr_node->pkt->type){
-                    case MSG_DM:
-                        process_dm(clients, curr_node->pkt);
                     case MSG_TEXT:
-                        process_text(clients, curr_node->pkt);
+                        process_text(rooms, curr_node->pkt, &server);
+                        break;
+                    case MSG_DM:
+                        process_dm(usr_list, curr_node->pkt, &server);
+                        break;
+                    case MSG_LEAVE:
+                        process_leave();
+                        break;
+                    case MSG_JOIN:
+                        process_join(rooms, curr_node->pkt, curr_node->sender_fd, curr_node);
+                        break;
+                    case MSG_NICK:
+                        process_nick(usr_list, server.num_clients, curr_node->sender_fd, curr_node->pkt);
+                        break;
+                    case MSG_WHO:
+                        process_who();
+                        break;
+                    case MSG_LIST:
+                        process_list();
+                        break;
+                    case MSG_QUIT:
+                        process_quit(rooms, server.num_rooms, curr_node->sender_fd, curr_node->pkt);
+                        break;
                     default:
                 }
+                remove_pkt_and_deallocate(pkt_head, curr_node);
             }
         }
     }
@@ -91,37 +117,55 @@ void main(){
 }
 
 
-int recieve_until_full(int *fds, fd_set *rfd, pkt_node *pkts, server_data *server){
+int recieve_until_full(usr_data *users, fd_set *rfd, pkt_node *pkts, server_data *server){
     for (int i = 0; i < server->num_clients; i++){
         if (server->num_packets >= 32) break;
 
-        if (FD_ISSET(fds[i], rfd)){
+        if (FD_ISSET(users[i].fd, rfd)){
             Packet *in_pkt = malloc(sizeof(Packet));
-            recv_packet(fds[i], in_pkt);
+            
+            recv_packet(users[i].fd, in_pkt);
+
+            add_to_pkt_list(users[i].fd, pkts, in_pkt, server);
         }
     }
-    return;
+    return 0;
 }
 
 
-void connect_new_client(fd_set *master, int *client_fds, server_data *server){
+void connect_new_client(fd_set *master, usr_data *usr_list, server_data *server){
 
-    struct sockaddr_in new_client;
-    new_client.sin_family = AF_INET;
+    struct sockaddr_in nc_addr;
+    nc_addr.sin_family = AF_INET;
     unsigned int client_len = sizeof(struct sockaddr_in);
 
-    int new_client_fd = accept(server->server_fd, (struct sockaddr *) &new_client, &client_len);
+    int new_client_fd = accept(server->server_fd, (struct sockaddr *) &nc_addr, &client_len);
     
     if (new_client_fd < 0){
         perror("accept failed");
         return;
     }
-
+    
+    //create new_client
+    if (server->num_clients = server->max_clients){
+        return -1;
+    }
+    usr_list[server->num_clients].fd = new_client_fd;
+    char *temp_name;
+    generate_random_name(temp_name, usr_list, server->num_clients);
+    strncpy(usr_list[server->num_clients].username, temp_name, 32);
+    
+    //set new max_fd
     if (new_client_fd > server->max_fd) server->max_fd = new_client_fd;
-    client_fds[server->num_clients] = new_client_fd;
     server->num_clients++;
 
     FD_SET(new_client_fd, master);
 
     return;
+}
+
+void generate_random_name(char *name, usr_data *list, int n){
+    do{
+        name = itoa(rand() % 99999);
+    }while(find_client_by_name(list, n, name) != -1);
 }
