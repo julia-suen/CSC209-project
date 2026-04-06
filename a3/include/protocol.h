@@ -4,7 +4,7 @@
 #include <time.h>
 
 #define MAX_USER 32
-#define MAX_DEST 16
+#define MAX_DEST 32
 #define MAX_MSG 512
 #define PORT 58086
 
