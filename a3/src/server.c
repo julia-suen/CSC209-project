@@ -12,22 +12,23 @@
 #include "../include/server.h"
 #include "../include/serverutil.h"
 #include "../include/common.h"
-pkt_node *recieve_until_full(usr_data *users, fd_set *rfd, pkt_node *pkts, server_data *server){
+pkt_node *recieve_until_full(usr_data *users, fd_set *rfd, fd_set *mfd, pkt_node *pkts, server_data *server){
     for (int i = 0; i < server->num_clients; i++){
         if (server->num_packets >= 32) break;
-
         if (FD_ISSET(users[i].fd, rfd)){
-            printf("Incoming Packet");
+            printf("Incoming Packet\n");
             Packet *in_pkt = malloc(sizeof(Packet));
             
             if (recv_packet(users[i].fd, in_pkt) != 0){
-                printf("client disconnect");
+                printf("client disconnect\n");
                 remove_client_from_list(users, users[i], server);
+                printf("Remaining clients: %d\n", server->num_clients);
+                FD_CLR(users[i].fd, mfd);
                 continue;
             }
 
             // print_packet(in_pkt);        // debug print packet
-
+            strncat(in_pkt->usrid, users[i].username, MAX_DEST-1);
             pkts = add_to_pkt_list(users[i].fd, pkts, in_pkt, server);
             server->num_packets++;
         }
@@ -59,6 +60,7 @@ int connect_new_client(fd_set *master, usr_data *usr_list, server_data *server){
         return -1;
     }
     usr_list[server->num_clients].fd = new_client_fd;
+    usr_list[server->num_clients].room_id = -1;
     char temp_name[MAX_USER];
     generate_random_name(temp_name, usr_list, server->num_clients);
     strncpy(usr_list[server->num_clients].username, temp_name, 32);
@@ -127,11 +129,11 @@ int main(){
         select(server.max_fd + 1, &rfds, NULL, NULL, &timeout);
         // connect  block
         if (FD_ISSET(server.server_fd, &rfds)){
-            printf("connection code: %d", connect_new_client(&master_list, usr_list, &server));
+            printf("connection code: %d\n", connect_new_client(&master_list, usr_list, &server));
         }
 
         // read block
-        pkt_head = recieve_until_full(usr_list, &rfds, pkt_head, &server);
+        pkt_head = recieve_until_full(usr_list, &rfds, &master_list, pkt_head, &server);
 
         // write block
         if (server.num_packets > 0){
@@ -155,29 +157,30 @@ int main(){
                         process_dm(usr_list, curr_node->pkt, &server);
                         break;
                     case MSG_LEAVE:
-                        process_leave();
+                        process_leave(rooms, usr_list, curr_node->sender_fd, server.num_clients);
                         break;
                     case MSG_JOIN:
-                        process_join(rooms, curr_node->pkt, curr_node->sender_fd, server.num_rooms);
+                        process_join(usr_list, server.num_clients, rooms, curr_node->pkt, curr_node->sender_fd, server.num_rooms);
                         break;
                     case MSG_NICK:
                         process_nick(usr_list, server.num_clients, curr_node->sender_fd, curr_node->pkt);
                         break;
                     case MSG_WHO:
-                        process_who();
+                        process_who(usr_list, curr_node->sender_fd, rooms, &server);
                         break;
                     case MSG_LIST:
-                        process_list();
+                        process_list(usr_list, curr_node->sender_fd, rooms, &server);
                         break;
                     case MSG_QUIT:
                         process_quit(rooms, server.num_rooms, curr_node->sender_fd, curr_node->pkt);
                         break;
                     default:
                 }
-                pkt_head = remove_pkt_and_deallocate(pkt_head, curr_node);
+                pkt_head = remove_pkt_and_deallocate(pkt_head, curr_node, &server);
                 curr_node = curr_node->next;
             }
         }
+        fflush(stdout);
     }
     
     return 0;        
