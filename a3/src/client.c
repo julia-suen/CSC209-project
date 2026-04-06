@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <protocol.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/socket.h>
 #include <netinet/in.h>    /* Internet domain header */
 #include <netdb.h>
 #include <sys/socket.h>
@@ -43,7 +41,8 @@ int get_username(char *username, int soc) {
         Packet pkt;
         init_packet(&pkt);
         pkt.type = MSG_NICK;
-        strcpy(pkt.message, username);
+        strncpy(pkt.message, username, MAX_MSG - 1);
+        pkt.message[MAX_MSG - 1] = '\0';
         
         // send username packet
         if (send_packet(soc, &pkt) < 0) {
@@ -63,10 +62,12 @@ int get_username(char *username, int soc) {
         } else if (pkt.type == MSG_SYSTEM) {
             // nickname accepted
             printf("%s\n", pkt.message);
-            break;
+            break;      // exit loop when valid nickname packet sucessfully sent
+        }else {
+            printf("Unexpected response from server.\n");
+            continue;
         }
 
-        break;  // exit loop when valid nickname packet sucessfully sent
     }
 
     return 0;
@@ -97,29 +98,35 @@ int handle_user_input(int soc, const char *buf) {
     // set packet according to the command type
     switch (cmd.type) {
         case CMD_TEXT:
-            pkt.type = MSG_TEXT;
-            strcpy(pkt.message, cmd.arg2);
+            pkt.type = MSG_TEXT;    
+            strncpy(pkt.message, cmd.arg2, MAX_MSG - 1);
+            pkt.message[MAX_MSG - 1] = '\0';
             break;
 
         case CMD_MSG:
             pkt.type = MSG_PRIVATE;
-            strcpy(pkt.destination, cmd.arg1);
-            strcpy(pkt.message, cmd.arg2);
+            strncpy(pkt.destination, cmd.arg1, MAX_USER - 1);
+            pkt.destination[MAX_USER - 1] = '\0';
+            strncpy(pkt.message, cmd.arg2, MAX_MSG - 1);
+            pkt.message[MAX_MSG - 1] = '\0';
             break;
 
         case CMD_NICK:
             pkt.type = MSG_NICK;
-            strcpy(pkt.message, cmd.arg1);      // put nickname in packet's message
+            strncpy(pkt.message, cmd.arg1, MAX_MSG - 1);      // put nickname in packet's message
+            pkt.message[MAX_MSG - 1] = '\0';
             break;
 
         case CMD_JOIN:
             pkt.type = MSG_JOIN;
-            strcpy(pkt.destination, cmd.arg1);
+            strncpy(pkt.destination, cmd.arg1, MAX_USER - 1);
+            pkt.destination[MAX_USER - 1] = '\0';
             break;
 
         case CMD_LEAVE:
             pkt.type = MSG_LEAVE;
-            strcpy(pkt.destination, cmd.arg1);
+            strncpy(pkt.destination, cmd.arg1, MAX_USER - 1);
+            pkt.destination[MAX_USER - 1] = '\0';
             break;
 
         case CMD_WHO:
@@ -140,7 +147,7 @@ int handle_user_input(int soc, const char *buf) {
     }
 
     if (send_packet(soc, &pkt) < 0) {
-        perrpr("send_packet");
+        perror("send_packet");
         return -1;
     }
 
@@ -166,7 +173,11 @@ int main() {
     char * hostname = "teach.cs.toronto.edu";
 
     // declares memory and populates ailist 
-    getaddrinfo(hostname, NULL, NULL, &ai);
+    if(getaddrinfo(hostname, NULL, NULL, &ai) != 0){
+        perror("getaddrinfo");
+        exit(1);
+    }
+    
     // we only make use of the first element in the list 
     server.sin_addr = ((struct sockaddr_in *) ai->ai_addr)->sin_addr;
 
