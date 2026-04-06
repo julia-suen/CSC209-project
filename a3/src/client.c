@@ -10,7 +10,6 @@
 #include "../include/commands.h"
 #include "../include/ui.h"
 
-#define PORT 58086      // hardcode port number
 
 // Prompt the user for a username right after connecting
 // Return 0 if success, -1 if user quits/EOF
