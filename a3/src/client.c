@@ -87,6 +87,11 @@ int handle_user_input(int soc, const char *buf) {
     // print_command(&cmd);
 
     if (cmd.type == CMD_QUIT) {
+        // send quit packet to server
+        Packet pkt;
+        init_packet(&pkt);
+        pkt.type = MSG_QUIT;
+        send_packet(soc, &pkt);
         close(soc);
         return 1;  // signal to exit
     }
@@ -177,7 +182,7 @@ int main() {
         perror("getaddrinfo");
         exit(1);
     }
-    
+
     // we only make use of the first element in the list 
     server.sin_addr = ((struct sockaddr_in *) ai->ai_addr)->sin_addr;
 
@@ -195,6 +200,12 @@ int main() {
     char username[MAX_USER];
 
     if (get_username(username, soc) < 0) {
+         // send quit packet to server
+        Packet pkt;
+        init_packet(&pkt);
+        pkt.type = MSG_QUIT;
+        send_packet(soc, &pkt);
+        
         close(soc);
         exit(0);
     }
@@ -234,6 +245,12 @@ int main() {
             int n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
 
             if (n == 0){
+                // send quit packet to server
+                Packet pkt;
+                init_packet(&pkt);
+                pkt.type = MSG_QUIT;
+                send_packet(soc, &pkt);
+
                 close(soc);
                 fprintf(stderr, "EOF: exiting\n");
                 break;
