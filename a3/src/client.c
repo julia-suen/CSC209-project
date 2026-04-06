@@ -7,10 +7,55 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include "protocol.h"
-#include "commands.h"
+#include "../include/protocol.h"
+#include "../include/commands.h"
 
 #define PORT 58086      // hardcode port number
+
+// Prompt the user for a username right after connecting
+// Return 0 if success, -1 if user quits/EOF
+int get_username(char *username, int soc) {
+    while (1) {
+        printf("Enter your username: ");
+
+        int n = read(STDIN_FILENO, username, MAX_USER - 1);
+        if (n <= 0) { 
+            fprintf(stderr, "EOF: exiting\n");
+            return -1;  // exit
+        }
+
+        username[n] = '\0';
+        trim_newline(username);
+
+        if (strcmp(username, "/quit") == 0) {
+            printf("Quitting.\n");
+            return -1;  // exit
+        }
+
+        if (strlen(username) == 0) {
+            printf("Invalid username, try again.\n");
+            continue;
+        }
+
+        // send MSG_NICK types packet to server
+        Packet pkt;
+        init_packet(&pkt);
+        pkt.type = MSG_NICK;
+        strcpy(pkt.message, username);
+
+        if (send_packet(soc, &pkt) < 0) {
+            perror("send_packet");
+            return -1;
+        }
+
+        // TODO: add server's check for duplicate username 
+
+        break;  // exit loop when valid nickname packet sucessfully sent
+    }
+
+    return 0;
+}
+
 
 int handle_user_input(int soc, const char *buf) {
     // initialize command
@@ -112,10 +157,19 @@ int main() {
     // free the memory that was allocated by getaddrinfo for this list
     freeaddrinfo(ai);
 
+    // connect to server
     int ret = connect(soc, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
     if (ret == -1){
         perror("connect");
         exit(1);
+    }
+
+    // ask user for username
+    char username[MAX_USER];
+
+    if (get_username(username, soc) < 0) {
+        close(soc);
+        exit(0);
     }
 
     // Send one packet test - no user input invovled 
@@ -123,23 +177,6 @@ int main() {
     // init_packet(&pkt);
     // strcpy(pkt.message, "hello");
     // send_packet(soc, &pkt);
-
-    // initialize pkt before loop
-    // char buf[512];
-
-    // while (1) {
-    //     // Read user input
-    //     int n = read(STDIN_FILENO, buf, sizeof(buf) - 1);
-    //     if (n > 0) {
-    //         buf[n] = '\0';  // null terminate
-
-    //         // TODO: maybe trim new line before sending
-    //         init_packet(&pkt);
-    //         strcpy(pkt.message, buf);
-
-    //         send_packet(soc, &pkt);
-    //     }
-    // }
 
     fd_set read_fds;
     Packet pkt;
