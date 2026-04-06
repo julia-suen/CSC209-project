@@ -16,12 +16,12 @@ pkt_node *remove_pkt_and_deallocate(pkt_node *pkts, pkt_node *pkt, server_data *
 // void get_client_by_name(char *name, usr_node *list);
 
 int process_dm(usr_data *clients, Packet *pkt, server_data *server);
-int process_text(chatroom *rooms, Packet *pkt, int num_rooms);
-int process_leave(chatroom *rooms, usr_data *clients, int fd, int num_clients);
-int process_join(usr_data* clients, int num_client, chatroom *rooms, Packet *pkt, int fd, int num_rooms);
+int process_text(usr_data *clients, int num_user, int fd, chatroom **room_head, Packet *pkt, int num_rooms);
+int process_leave(usr_data *clients, int num_clients, chatroom **room_head, int fd);
+int process_join(usr_data* clients, int num_clients, chatroom **room_head, Packet *pkt, int fd);
 int process_nick(usr_data *clients, int num_clients, int fd, Packet *pkt);
-int process_who(usr_data* clients, int fd, chatroom *rooms, server_data *server);
-int process_list(usr_data* clients, int fd, chatroom *rooms, server_data *server);
-int process_quit(fd_set *master_list, usr_data* clients, chatroom *rooms, int num_rooms, int fd, Packet *pkt, server_data *server);
+int process_who(usr_data* clients, int fd, chatroom *room_head, int num_clients);
+int process_list(usr_data* clients, int fd, chatroom *room_head, int num_clients);
+int process_quit(fd_set *master_list, usr_data* clients, chatroom **room_head, int fd, Packet *pkt, server_data *server);
 
 #endif

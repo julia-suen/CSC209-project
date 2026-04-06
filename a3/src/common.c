@@ -16,23 +16,23 @@ void trim_newline(char *s) {
     }
 }
 
-chatroom *rooms_set_up(int n) {
-    chatroom *rooms = malloc(sizeof(chatroom) * n);
-    if (rooms == NULL) {
-        return NULL;
-    }
+// chatroom *rooms_set_up(int n) {
+//     chatroom *rooms = malloc(sizeof(chatroom) * n);
+//     if (rooms == NULL) {
+//         return NULL;
+//     }
 
-    for (int i = 0; i < n; i++) {
-        rooms[i].room_id = i;
-        rooms[i].num_users = 0;
+//     for (int i = 0; i < n; i++) {
+//         rooms[i].room_id = i;
+//         rooms[i].num_users = 0;
 
-        for (int j = 0; j < MAX_USER; j++) {
-            rooms[i].user_fds[j] = -1;
-        }
-    }
+//         for (int j = 0; j < MAX_USER; j++) {
+//             rooms[i].user_fds[j] = -1;
+//         }
+//     }
 
-    return rooms;
-}
+//     return rooms;
+// }
 
 int find_client_index(usr_data *clients, int num_clients, int fd) {
     for (int i = 0; i < num_clients; i++) {
@@ -96,11 +96,14 @@ int remove_user_from_room(chatroom *room, int client_fd) {
 }
 
 
-int get_room_by_name(chatroom *list, int num_room, int name){
-    for (int i = 0; i < num_room; i++){
-        if (name == list[i].room_id){
-            return i;
+chatroom *get_room_by_name(chatroom *head, char* name){
+    chatroom *curr = head;
+    while (curr){
+        if (strncmp(curr->room_id, name, MAX_DEST) == 0){
+            return curr;
         }
+        curr = curr->next;
     }
-    return -1;
+    
+    return NULL;
 }
