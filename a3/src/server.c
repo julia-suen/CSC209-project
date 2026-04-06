@@ -151,7 +151,7 @@ int main(){
 
                 switch (curr_node->pkt->type){
                     case MSG_TEXT:
-                        process_text(usr_list, server.num_clients, curr_node->sender_fd, &room_head, curr_node->pkt, server.num_rooms);
+                        process_text(usr_list, server.num_clients, curr_node->sender_fd, &room_head, curr_node->pkt);
                         break;
                     case MSG_DM:
                         process_dm(usr_list, curr_node->pkt, &server);
@@ -172,7 +172,7 @@ int main(){
                         process_list(usr_list, curr_node->sender_fd, room_head, server.num_clients);
                         break;
                     case MSG_QUIT:
-                        process_quit(&master_list, usr_list, &room_head, curr_node->sender_fd, curr_node->pkt, &server);
+                        process_quit(&master_list, usr_list, &room_head, curr_node->sender_fd, &server);
                         break;
                     default:
                 }
