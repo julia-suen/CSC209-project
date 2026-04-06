@@ -4,6 +4,11 @@
             "cwd": "/mnt/h/CSC209A3/CSC209-project/a3",
             "binaryPath": "/mnt/h/CSC209A3/CSC209-project/a3/server",
             "binaryArgs": []
+        },
+        {
+            "cwd": "/mnt/h/CSC209A3/CSC209-project/a3/bin",
+            "binaryPath": "/mnt/h/CSC209A3/CSC209-project/a3/bin/server",
+            "binaryArgs": []
         }
     ]
 }

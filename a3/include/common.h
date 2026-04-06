@@ -4,16 +4,18 @@
 #include "protocol.h"
 #include <stddef.h>
 
-typedef struct {
-    int fd;
-    char username[MAX_USER];
-} usr_data;
 
 typedef struct {
     int room_id;
     int num_users;
     int user_fds[MAX_USER];
 } chatroom;
+
+typedef struct {
+    int fd;
+    char username[MAX_USER];
+    int room_id;
+} usr_data;
 
 void trim_newline(char *s);
 chatroom *rooms_set_up(int n);
