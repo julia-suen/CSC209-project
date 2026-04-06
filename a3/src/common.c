@@ -39,7 +39,7 @@ int find_client_index(int *clients, int num_clients, int fd){
     return -1;
 }
 
-int find_client_by_name(urs_data *users, int num_users, const char *name){
+int find_client_by_name(usr_data *users, int num_users, const char *name){
     for (int i = 0; i < num_users; i++){
         if (strcmp(users[i].username, name) == 0){
             return i;
@@ -83,4 +83,15 @@ int remove_user_from_room(chatroom *room, int client_fd) {
     room->num_users--;
 
     return 0;
+}
+
+
+int get_room_by_name(chatroom *list, int num_room, char* name){
+    int room_name = atoi(name);
+    for (int i = 0; i < num_room; i++){
+        if (room_name == list[i].room_id){
+            return i;
+        }
+    }
+    return -1;
 }
