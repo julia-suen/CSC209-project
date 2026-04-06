@@ -12,17 +12,18 @@
 #include "../include/server.h"
 #include "../include/serverutil.h"
 #include "../include/common.h"
-pkt_node *recieve_until_full(usr_data *users, fd_set *rfd, pkt_node *pkts, server_data *server){
+pkt_node *recieve_until_full(usr_data *users, fd_set *rfd, fd_set *mfd, pkt_node *pkts, server_data *server){
     for (int i = 0; i < server->num_clients; i++){
         if (server->num_packets >= 32) break;
-
         if (FD_ISSET(users[i].fd, rfd)){
-            printf("Incoming Packet");
+            printf("Incoming Packet\n");
             Packet *in_pkt = malloc(sizeof(Packet));
             
             if (recv_packet(users[i].fd, in_pkt) != 0){
-                printf("client disconnect");
+                printf("client disconnect\n");
                 remove_client_from_list(users, users[i], server);
+                printf("Remaining clients: %d\n", server->num_packets);
+                FD_CLR(users[i].fd, mfd);
                 continue;
             }
 
@@ -127,11 +128,11 @@ int main(){
         select(server.max_fd + 1, &rfds, NULL, NULL, &timeout);
         // connect  block
         if (FD_ISSET(server.server_fd, &rfds)){
-            printf("connection code: %d", connect_new_client(&master_list, usr_list, &server));
+            printf("connection code: %d\n", connect_new_client(&master_list, usr_list, &server));
         }
 
         // read block
-        pkt_head = recieve_until_full(usr_list, &rfds, pkt_head, &server);
+        pkt_head = recieve_until_full(usr_list, &rfds, &master_list, pkt_head, &server);
 
         // write block
         if (server.num_packets > 0){
@@ -178,6 +179,7 @@ int main(){
                 curr_node = curr_node->next;
             }
         }
+        fflush(stdout);
     }
     
     return 0;        

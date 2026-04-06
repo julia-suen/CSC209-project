@@ -26,13 +26,13 @@ void send_sys_msg(int is_error, char* name, int fd, char* msg){
 
 int remove_client_from_list(usr_data *list, usr_data client, server_data *server){
     int index;
-    if ((index = find_client_by_name(list, server->num_clients, client.username)) < 1){
+    if ((index = find_client_by_name(list, server->num_clients, client.username)) < 0){
         return -1;
     }
-    for (int i = index; i < server->num_clients - 1; i++){
+    for (int i = index; i < server->max_clients - 1; i++){
         list[i] = list[i+1];
     }
-    server->clients--;
+    server->num_clients--;
     return 0;
 }
 
