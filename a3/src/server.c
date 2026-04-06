@@ -20,11 +20,13 @@ pkt_node *recieve_until_full(usr_data *users, fd_set *rfd, pkt_node *pkts, serve
             printf("Incoming Packet");
             Packet *in_pkt = malloc(sizeof(Packet));
             
-            // if (recv_packet(users[i].fd, in_pkt) != 0){
-            //     printf("client disconnect");
-            //     remove_client_from_list(users, users[i], server);
-            //     continue;
-            // }
+            if (recv_packet(users[i].fd, in_pkt) != 0){
+                printf("client disconnect");
+                remove_client_from_list(users, users[i], server);
+                continue;
+            }
+
+            // print_packet(in_pkt);        // debug print packet
 
             pkts = add_to_pkt_list(users[i].fd, pkts, in_pkt, server);
             server->num_packets++;
