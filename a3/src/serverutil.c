@@ -43,6 +43,25 @@ void send_sys_msg_to_room(chatroom* room, int is_error, usr_data* clients, int n
     }
 }
 
+void send_sys_msg_to_all(usr_data* clients, int is_error, int num_clients, char* msg){  
+
+    for (int i = 0; i < num_clients; i++){    
+        Packet pkt;
+        memset(&pkt, 0, sizeof(Packet));
+        if (is_error == 1){
+            pkt.type = MSG_ERROR;
+            strncat(pkt.message, "ERROR: ", MAX_MSG-1);
+        } else{   
+            pkt.type = MSG_SYSTEM;
+        }
+        strncat(pkt.message, msg, MAX_MSG - strlen(pkt.message));
+        strncat(pkt.destination, clients[find_client_index(clients, num_clients, clients[i].fd)].username, MAX_DEST - 1);
+        strncat(pkt.usrid, "SERVER", MAX_USER - 1);
+        pkt.timestamp = time(NULL);
+        send_packet(clients[i].fd, &pkt);
+    }
+}
+
 int remove_client_from_list(usr_data *list, usr_data client, server_data *server){
     int index;
     if ((index = find_client_by_name(list, server->num_clients, client.username)) < 0){
@@ -209,8 +228,18 @@ int process_list(usr_data* clients, int fd, chatroom *rooms, server_data *server
     return 0;
 }
 
-int process_quit(chatroom *rooms, int num_rooms, int fd, Packet *pkt){
-    int room_index = get_room_by_name(rooms, num_rooms, (int) strtol(pkt->destination, NULL, 10));
-    remove_user_from_room(&rooms[room_index], fd);
+int process_quit(fd_set *master_list, usr_data* clients, chatroom *rooms, int num_rooms, int fd, Packet *pkt, server_data *server){
+    int client_index = find_client_index(clients, server->num_clients, fd);
+    if (clients[client_index].room_id != -1){
+        process_leave(rooms, clients, fd, server->num_clients);
+    }
+    char msg[MAX_MSG];
+    memset(msg, 0, MAX_MSG);
+    strncat(msg, clients[client_index].username, MAX_MSG-1);
+    strncat(msg, " has disconnected from the server", MAX_MSG-strlen(msg)-1);
+    FD_CLR(fd, master_list);
+    remove_client_from_list(clients, clients[client_index], server);
+    
+    send_sys_msg_to_all(clients, 0, server->num_clients, msg);
     return 0;
 }

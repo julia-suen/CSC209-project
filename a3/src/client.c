@@ -189,7 +189,6 @@ int main() {
 
     // connect to server
     int ret = connect(soc, (struct sockaddr *)&server, sizeof(struct sockaddr_in));
-    printf("connected");
     if (ret == -1){
         perror("connect");
         exit(1);

@@ -172,7 +172,7 @@ int main(){
                         process_list(usr_list, curr_node->sender_fd, rooms, &server);
                         break;
                     case MSG_QUIT:
-                        process_quit(rooms, server.num_rooms, curr_node->sender_fd, curr_node->pkt);
+                        process_quit(&master_list, usr_list, rooms, server.num_rooms, curr_node->sender_fd, curr_node->pkt, &server);
                         break;
                     default:
                 }
