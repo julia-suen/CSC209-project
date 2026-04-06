@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include "../include/protocol.h"
 #include "../include/commands.h"
+#include "../include/ui.h"
 
 #define PORT 58086      // hardcode port number
 
@@ -234,7 +235,7 @@ int main() {
                 break;
             }
 
-            print_packet(&pkt);  // TODO: change to ui.c's function to display message 
+            display_packet(&pkt);
         }
     }
     return 0;
