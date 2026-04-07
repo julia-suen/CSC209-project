@@ -238,7 +238,7 @@ int process_who(usr_data* clients, int fd, chatroom *room_head, int num_clients)
     if(strlen(clients[find_client_index(clients, num_clients, fd)].room_id) == 0){
         strncat(msg, "Currently in server: ", MAX_MSG-1);
         for (int i = 0; i < num_clients; i++){
-            strncat(msg, clients[i].username, MAX_DEST-strlen(msg));
+            strncat(msg, clients[i].username, MAX_MSG-strlen(msg));
             if (i < num_clients - 1) {
                 strncat(msg, ", ", MAX_MSG - strlen(msg) - 1); // Add separator if not last
             }
