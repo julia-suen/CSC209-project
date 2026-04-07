@@ -7,11 +7,36 @@
 #include <errno.h>
 #include <time.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include "../include/protocol.h"
 #include "../include/server.h"
 #include "../include/serverutil.h"
 #include "../include/common.h"
+
+volatile sig_atomic_t keep_running = 1;
+
+void handle_sigint(int sig) {
+    keep_running = 0;
+}
+
+void disconnect_all(usr_data* list, server_data *server){
+    Packet pkt;
+    memset(&pkt, 0 , sizeof(Packet));
+    pkt.type = MSG_QUIT;
+    strncat(pkt.usrid, "SERVER", MAX_USER - 1);
+    strncat(pkt.message, "SERVER DISCONNECT", MAX_MSG - 1);
+    for (int i = 0; i<server->num_clients; i++){
+        send_packet(list[i].fd, &pkt);
+        close(list[i].fd);
+    }
+    // while(server->num_clients > 0){
+    //     printf("Disconnecting all users");
+    //     remove_client_from_list(list, list[0], server);
+    // }
+    return;
+}
+
 pkt_node *recieve_until_full(usr_data *users, fd_set *rfd, fd_set *mfd, pkt_node *pkts, server_data *server){
     for (int i = 0; i < server->num_clients; i++){
         if (server->num_packets >= 32) break;
@@ -122,7 +147,11 @@ int main(){
         exit(1);
     }
 
-    while(1){
+    do {
+        signal(SIGINT, handle_sigint);
+        if (keep_running == 0){
+            break;
+        }
         fd_set rfds;
         FD_ZERO(&rfds);
         rfds = master_list;
@@ -131,7 +160,7 @@ int main(){
         if (FD_ISSET(server.server_fd, &rfds)){
             printf("connection code: %d\n", connect_new_client(&master_list, usr_list, &server));
         }
-
+        
         // read block
         pkt_head = recieve_until_full(usr_list, &rfds, &master_list, pkt_head, &server);
 
@@ -181,8 +210,11 @@ int main(){
             }
         }
         fflush(stdout);
-    }
-    
+    } while(keep_running == 1);
+    printf("\n cleaning \n");
+    disconnect_all(usr_list, &server);
+    printf("\n cleaned \n");
+    fflush(stdout);
     return 0;        
 }
 

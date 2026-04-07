@@ -2,7 +2,7 @@
 #include "../include/common.h"
 #include "../include/server.h"
 #include "../include/serverutil.h"
-
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -67,6 +67,7 @@ int remove_client_from_list(usr_data *list, usr_data client, server_data *server
     if ((index = find_client_by_name(list, server->num_clients, client.username)) < 0){
         return -1;
     }
+    close(list[index].fd);
     for (int i = index; i < server->max_clients - 1; i++){
         list[i] = list[i+1];
     }
