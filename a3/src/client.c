@@ -271,10 +271,8 @@ int main() {
                 close(soc);
                 break;
             }
-            
-            if (pkt.type != 0) {
-                display_packet(&pkt);
-            }
+        
+            display_packet(&pkt);
         }
     }
     return 0;
