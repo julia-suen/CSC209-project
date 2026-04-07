@@ -44,7 +44,7 @@ pkt_node *recieve_until_full(usr_data *users, fd_set *rfd, fd_set *mfd, pkt_node
         if (FD_ISSET(users[i].fd, rfd)){
             printf("Incoming Packet\n");
             Packet *in_pkt = malloc(sizeof(Packet));
-            
+            memset(in_pkt, 0, sizeof(Packet));
             if (recv_packet(users[i].fd, in_pkt) != 0){
                 printf("client disconnect\n");
                 remove_client_from_list(users, users[i], server);
