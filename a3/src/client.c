@@ -62,7 +62,8 @@ int get_username(char *username, int soc) {
             continue;
         } else if (pkt.type == MSG_SYSTEM) {
             // nickname accepted
-            printf("%s\n", pkt.message);
+            printf("Welcome, %s!\n", username);
+            fflush(stdout);
             break;      // exit loop when valid nickname packet sucessfully sent
         }else {
             printf("Unexpected response from server.\n");
@@ -140,9 +141,9 @@ int handle_user_input(int soc, const char *buf) {
             pkt.type = MSG_LIST;
             break;
 
-        // case CMD_HELP:
-        //     pkt.type = MSG_HELP;
-        //     break;
+        case CMD_HELP:
+            print_help_menu();
+            break;
 
         default:
             printf("Invalid command.\n");
@@ -262,14 +263,18 @@ int main() {
 
         // Server message 
         if (FD_ISSET(soc, &read_fds)) {
+            init_packet(&pkt);              // clear old data
             int status = recv_packet(soc, &pkt);
 
-            if (status < 0) {
+            if (status < 0 || pkt.type == MSG_QUIT) {
                 fprintf(stderr, "Server disconnected.\n");
+                close(soc);
                 break;
             }
-
-            display_packet(&pkt);
+            
+            if (pkt.type != 0) {
+                display_packet(&pkt);
+            }
         }
     }
     return 0;
